@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#4F7CFF">
 <title>공부시간</title>
+<script>
+  try { const t = localStorage.getItem("studytimer:theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch (e) {}
+</script>
 <style>
   :root {
     --bg: #f5f6fa; --card: #ffffff; --text: #1d2130; --muted: #6b7185; --line: #e4e6ee;
@@ -12,12 +15,21 @@
     --shadow: 0 1px 3px rgba(20,25,45,.06), 0 4px 16px rgba(20,25,45,.05);
   }
   @media (prefers-color-scheme: dark) {
-    :root {
+    :root:not([data-theme="light"]) {
       --bg: #12141b; --card: #1c1f29; --text: #eef0f6; --muted: #9aa0b4; --line: #2c303d;
       --accent: #6f93ff; --accent-soft: #232b45; --danger: #ff6b6f; --ok: #3ccf7d; --warn-bg: #3a3218; --warn-text: #f2d27a;
       --shadow: none;
     }
   }
+  :root[data-theme="dark"] {
+    --bg: #12141b; --card: #1c1f29; --text: #eef0f6; --muted: #9aa0b4; --line: #2c303d;
+    --accent: #6f93ff; --accent-soft: #232b45; --danger: #ff6b6f; --ok: #3ccf7d; --warn-bg: #3a3218; --warn-text: #f2d27a;
+    --shadow: none;
+  }
+  :root { color-scheme: light; }
+  :root[data-theme="dark"] { color-scheme: dark; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { color-scheme: dark; } }
+  #theme-toggle { position: fixed; top: max(12px, env(safe-area-inset-top)); right: 12px; z-index: 15; width: 44px; padding: 0; font-size: 20px; background: var(--card); box-shadow: var(--shadow); border: 1px solid var(--line); }
   * { box-sizing: border-box; }
   html, body { margin: 0; }
   body {
@@ -105,6 +117,7 @@
 </style>
 </head>
 <body>
+<button id="theme-toggle" aria-label="화면 테마 바꾸기"></button>
 <main>
   <div id="storage-warning" class="banner hidden">이 브라우저에서는 기록을 저장할 수 없어요. 페이지를 닫으면 기록이 사라져요.</div>
 
@@ -197,6 +210,17 @@
       <div class="field">
         <div>하루 목표</div>
         <select id="set-goal"></select>
+      </div>
+    </div>
+    <div class="card">
+      <h2>화면</h2>
+      <div class="field">
+        <div><div>테마</div><div class="muted">시스템을 고르면 기기 설정을 따라가요</div></div>
+        <select id="set-theme">
+          <option value="system">시스템</option>
+          <option value="light">라이트</option>
+          <option value="dark">다크</option>
+        </select>
       </div>
     </div>
     <div class="card">
@@ -792,6 +816,29 @@ $("session-list").addEventListener("click", (e) => {
   if (b) Actions.deleteSession(b.dataset.delete);
 });
 $("btn-share").addEventListener("click", share);
+
+const THEME_KEY = "studytimer:theme";
+const darkQuery = window.matchMedia("(prefers-color-scheme: dark)");
+function getTheme() {
+  try { const t = localStorage.getItem(THEME_KEY); return t === "light" || t === "dark" ? t : "system"; } catch (e) { return "system"; }
+}
+function applyTheme(theme) {
+  try { theme === "system" ? localStorage.removeItem(THEME_KEY) : localStorage.setItem(THEME_KEY, theme); } catch (e) {}
+  if (theme === "system") delete document.documentElement.dataset.theme;
+  else document.documentElement.dataset.theme = theme;
+  const isDark = theme === "dark" || (theme === "system" && darkQuery.matches);
+  $("theme-toggle").textContent = isDark ? "☀️" : "🌙";
+  $("theme-toggle").setAttribute("aria-label", isDark ? "라이트 모드로 바꾸기" : "다크 모드로 바꾸기");
+  $("set-theme").value = theme;
+  document.querySelector('meta[name="theme-color"]').content = isDark ? "#12141b" : "#4F7CFF";
+}
+$("theme-toggle").addEventListener("click", () => {
+  const isDark = document.documentElement.dataset.theme === "dark" || (!document.documentElement.dataset.theme && darkQuery.matches);
+  applyTheme(isDark ? "light" : "dark");
+});
+$("set-theme").addEventListener("change", (e) => applyTheme(e.target.value));
+darkQuery.addEventListener("change", () => applyTheme(getTheme()));
+applyTheme(getTheme());
 
 $("set-strict").addEventListener("change", (e) => commit((s) => { s.settings.strictMode = e.target.checked; }));
 $("set-grace").addEventListener("change", (e) => commit((s) => { s.settings.graceSeconds = Number(e.target.value); }));
