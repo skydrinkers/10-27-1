@@ -1,0 +1,887 @@
+html
+
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#4F7CFF">
+<title>공부시간</title>
+<style>
+  :root {
+    --bg: #f5f6fa; --card: #ffffff; --text: #1d2130; --muted: #6b7185; --line: #e4e6ee;
+    --accent: #4F7CFF; --accent-soft: #e8eeff; --danger: #e5484d; --ok: #12a150; --warn-bg: #fff4d6; --warn-text: #7a5a00;
+    --shadow: 0 1px 3px rgba(20,25,45,.06), 0 4px 16px rgba(20,25,45,.05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #12141b; --card: #1c1f29; --text: #eef0f6; --muted: #9aa0b4; --line: #2c303d;
+      --accent: #6f93ff; --accent-soft: #232b45; --danger: #ff6b6f; --ok: #3ccf7d; --warn-bg: #3a3218; --warn-text: #f2d27a;
+      --shadow: none;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", "Segoe UI", sans-serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+  main { max-width: 560px; margin: 0 auto; padding: 16px 16px 96px; }
+  h1 { font-size: 20px; margin: 4px 0 16px; }
+  h2 { font-size: 15px; margin: 0 0 12px; color: var(--muted); font-weight: 600; }
+  .card { background: var(--card); border-radius: 16px; padding: 16px; margin-bottom: 12px; box-shadow: var(--shadow); }
+  button { font: inherit; cursor: pointer; border: 0; border-radius: 12px; min-height: 44px; padding: 0 16px; background: var(--accent-soft); color: var(--text); }
+  button:disabled { opacity: .4; cursor: not-allowed; }
+  button.primary { background: var(--accent); color: #fff; font-weight: 700; }
+  button.danger { background: transparent; color: var(--danger); }
+  button.ghost { background: transparent; color: var(--muted); }
+  input, select { font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; min-height: 40px; padding: 0 10px; }
+  .hidden { display: none !important; }
+
+  /* Timer */
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; border-radius: 999px; padding: 0 14px; background: var(--bg); border: 2px solid transparent; }
+  .chip .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .chip.selected { border-color: var(--accent); background: var(--accent-soft); font-weight: 700; }
+  .clock { text-align: center; padding: 28px 0 12px; }
+  .clock .time { font-size: clamp(48px, 16vw, 72px); font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -1px; }
+  .clock .state { color: var(--muted); margin-top: 4px; min-height: 22px; }
+  .controls { display: flex; gap: 8px; justify-content: center; }
+  .controls button { flex: 1; max-width: 180px; min-height: 56px; font-size: 17px; }
+  .progress { height: 12px; background: var(--bg); border-radius: 999px; overflow: hidden; margin: 10px 0 6px; }
+  .progress > div { height: 100%; background: var(--accent); border-radius: 999px; transition: width .3s; }
+  .progress.done > div { background: var(--ok); }
+  .row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .muted { color: var(--muted); font-size: 14px; }
+  .big { font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .banner { background: var(--warn-bg); color: var(--warn-text); border-radius: 12px; padding: 12px 14px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 14px; }
+  .banner button { min-height: 36px; background: var(--card); }
+
+  /* Stats */
+  .grid4 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .stat { background: var(--bg); border-radius: 12px; padding: 12px; }
+  .stat .label { font-size: 13px; color: var(--muted); }
+  .stat .value { font-size: 20px; font-weight: 800; margin-top: 2px; font-variant-numeric: tabular-nums; }
+  .donut-wrap { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .legend { list-style: none; padding: 0; margin: 0; flex: 1; min-width: 150px; }
+  .legend li { display: flex; align-items: center; gap: 8px; padding: 4px 0; font-size: 14px; }
+  .legend .dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+  .legend .v { margin-left: auto; font-variant-numeric: tabular-nums; color: var(--muted); }
+  svg text { fill: var(--muted); font-size: 11px; font-family: inherit; }
+  .session { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid var(--line); }
+  .session:first-child { border-top: 0; }
+  .session .dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+  .session .info { flex: 1; min-width: 0; }
+  .session .name { font-weight: 600; }
+  .session .dur { font-variant-numeric: tabular-nums; font-weight: 700; }
+  .session button { min-height: 36px; padding: 0 10px; }
+  .empty { text-align: center; color: var(--muted); padding: 16px 0; font-size: 14px; }
+
+  /* Settings */
+  .field { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); }
+  .field:first-of-type { border-top: 0; }
+  .switch { position: relative; width: 52px; height: 30px; flex: none; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .switch span { position: absolute; inset: 0; background: var(--line); border-radius: 999px; transition: .2s; }
+  .switch span::after { content: ""; position: absolute; left: 3px; top: 3px; width: 24px; height: 24px; background: #fff; border-radius: 50%; transition: .2s; }
+  .switch input:checked + span { background: var(--accent); }
+  .switch input:checked + span::after { transform: translateX(22px); }
+  .subj-row { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-top: 1px solid var(--line); }
+  .subj-row:first-child { border-top: 0; }
+  .subj-row input[type=text] { flex: 1; min-width: 0; }
+  .subj-row.archived { opacity: .5; }
+  .swatches { display: flex; gap: 6px; flex-wrap: wrap; }
+  .swatch { width: 28px; height: 28px; min-height: 28px; padding: 0; border-radius: 50%; border: 3px solid transparent; }
+  .swatch.on { border-color: var(--text); }
+  .color-btn { width: 32px; height: 32px; min-height: 32px; padding: 0; border-radius: 50%; flex: none; }
+  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  /* Tabs & toast */
+  nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--card); border-top: 1px solid var(--line); display: flex; justify-content: center; padding-bottom: env(safe-area-inset-bottom); z-index: 10; }
+  nav button { flex: 1; max-width: 186px; background: transparent; border-radius: 0; min-height: 60px; color: var(--muted); font-size: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+  nav button .ic { font-size: 20px; line-height: 1; }
+  nav button.on { color: var(--accent); font-weight: 700; }
+  #toast { position: fixed; left: 50%; bottom: 84px; transform: translateX(-50%); background: #1d2130; color: #fff; padding: 12px 16px; border-radius: 12px; font-size: 14px; opacity: 0; pointer-events: none; transition: opacity .2s; max-width: calc(100% - 32px); z-index: 20; }
+  #toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+<main>
+  <div id="storage-warning" class="banner hidden">이 브라우저에서는 기록을 저장할 수 없어요. 페이지를 닫으면 기록이 사라져요.</div>
+
+  <!-- ===== 타이머 ===== -->
+  <section id="view-timer">
+    <h1>공부시간</h1>
+    <div id="away-banner" class="banner hidden">
+      <span>자리를 비워서 일시정지했어요. 계속할까요?</span>
+      <button id="away-resume">계속하기</button>
+    </div>
+    <div class="card">
+      <h2>과목</h2>
+      <div id="subject-chips" class="chips"></div>
+    </div>
+    <div class="card">
+      <div class="clock">
+        <div id="clock-time" class="time">00:00:00</div>
+        <div id="clock-state" class="state"></div>
+      </div>
+      <div class="controls">
+        <button id="btn-start" class="primary">시작</button>
+        <button id="btn-pause" class="hidden">일시정지</button>
+        <button id="btn-resume" class="primary hidden">계속</button>
+        <button id="btn-stop" class="hidden">종료</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="row">
+        <span class="muted">오늘 공부</span>
+        <span class="muted" id="goal-label"></span>
+      </div>
+      <div class="big" id="today-total">0분</div>
+      <div class="progress" id="goal-progress"><div style="width:0%"></div></div>
+      <div class="row">
+        <span class="muted" id="goal-percent">0%</span>
+        <span class="muted" id="today-interruptions"></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 통계 ===== -->
+  <section id="view-stats" class="hidden">
+    <h1>통계</h1>
+    <div class="card">
+      <div class="row" style="margin-bottom:12px">
+        <h2 style="margin:0">오늘 <span id="stats-date"></span></h2>
+        <button id="btn-share" class="primary" style="min-height:36px">오늘 기록 공유</button>
+      </div>
+      <div class="grid4">
+        <div class="stat"><div class="label">총 공부시간</div><div class="value" id="s-total"></div></div>
+        <div class="stat"><div class="label">세션</div><div class="value" id="s-count"></div></div>
+        <div class="stat"><div class="label">집중 이탈</div><div class="value" id="s-int"></div></div>
+        <div class="stat"><div class="label">최장 세션</div><div class="value" id="s-long"></div></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>오늘 과목별</h2>
+      <div id="donut"></div>
+    </div>
+    <div class="card">
+      <div class="row" style="margin-bottom:12px">
+        <h2 style="margin:0">최근 7일</h2>
+        <span class="muted" id="week-avg"></span>
+      </div>
+      <div id="bars"></div>
+    </div>
+    <div class="card">
+      <h2>오늘 세션</h2>
+      <div id="session-list"></div>
+    </div>
+  </section>
+
+  <!-- ===== 설정 ===== -->
+  <section id="view-settings" class="hidden">
+    <h1>설정</h1>
+    <div class="card">
+      <h2>측정</h2>
+      <div class="field">
+        <div><div>엄격 모드</div><div class="muted">화면을 벗어나면 자동으로 일시정지해요</div></div>
+        <label class="switch"><input type="checkbox" id="set-strict"><span></span></label>
+      </div>
+      <div class="field">
+        <div><div>유예 시간</div><div class="muted">이 시간 안에 돌아오면 그대로 계속돼요</div></div>
+        <select id="set-grace"></select>
+      </div>
+      <div class="field">
+        <div><div>하루 시작 시각</div><div class="muted">새벽 공부를 전날 기록으로 쳐요</div></div>
+        <select id="set-daystart"></select>
+      </div>
+      <div class="field">
+        <div>하루 목표</div>
+        <select id="set-goal"></select>
+      </div>
+    </div>
+    <div class="card">
+      <h2>과목</h2>
+      <div id="subject-editor"></div>
+      <div class="row" style="margin-top:10px">
+        <input type="text" id="new-subject" placeholder="새 과목 이름" maxlength="20" style="flex:1">
+        <button id="btn-add-subject" class="primary">추가</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>데이터</h2>
+      <div class="btn-row">
+        <button id="btn-export">기록 내보내기</button>
+        <button id="btn-import">기록 가져오기</button>
+        <button id="btn-reset" class="danger">모두 지우기</button>
+      </div>
+      <input type="file" id="import-file" accept="application/json,.json" class="hidden">
+    </div>
+  </section>
+</main>
+
+<nav>
+  <button data-tab="timer" class="on"><span class="ic">⏱</span>타이머</button>
+  <button data-tab="stats"><span class="ic">📊</span>통계</button>
+  <button data-tab="settings"><span class="ic">⚙️</span>설정</button>
+</nav>
+<div id="toast"></div>
+
+<script>
+"use strict";
+
+/* ================= Domain: pure functions, time is always passed in ================= */
+
+const MIN = 60 * 1000;
+const HOUR = 60 * MIN;
+const MIN_SESSION_MS = MIN;
+const STALE_MS = 30 * MIN;
+const HEARTBEAT_MS = 30 * 1000;
+const COLORS = ["#4F7CFF", "#FF6B6B", "#2EC4B6", "#FFB020", "#9B5DE5", "#F15BB5", "#00A86B", "#8D99AE"];
+const DEFAULT_SETTINGS = { strictMode: true, graceSeconds: 10, dayStartHour: 5, dailyGoalMinutes: 180 };
+
+function uid() {
+  if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+  return Date.now().toString(36) + Math.random().toString(36).slice(2);
+}
+
+const Timer = {
+  start(subjectId, now) {
+    return { id: uid(), subjectId, segments: [{ start: now, end: null }], interruptions: 0, status: "running", lastHeartbeat: now, hiddenAt: null };
+  },
+  pause(s, at) {
+    if (s.status !== "running") return s;
+    const segments = s.segments.slice();
+    const last = segments[segments.length - 1];
+    segments[segments.length - 1] = { start: last.start, end: Math.max(last.start, at) };
+    return { ...s, segments, status: "paused", lastHeartbeat: at, hiddenAt: null };
+  },
+  resume(s, now) {
+    if (s.status !== "paused") return s;
+    return { ...s, segments: [...s.segments, { start: now, end: null }], status: "running", lastHeartbeat: now };
+  },
+  stop(s, now) {
+    const paused = s.status === "running" ? Timer.pause(s, now) : s;
+    return { ...paused, status: "completed", hiddenAt: null };
+  },
+  elapsed(s, now) {
+    return s.segments.reduce((sum, g) => sum + Math.max(0, (g.end == null ? now : g.end) - g.start), 0);
+  },
+  // Strict mode: hidden longer than the grace period pauses at the moment the tab was hidden.
+  handleHidden(s, hiddenAt, returnedAt, settings) {
+    const cleared = { ...s, hiddenAt: null };
+    if (!settings.strictMode || s.status !== "running" || returnedAt - hiddenAt <= settings.graceSeconds * 1000) {
+      return { session: cleared, autoPaused: false };
+    }
+    const paused = Timer.pause(s, hiddenAt);
+    return { session: { ...paused, interruptions: s.interruptions + 1 }, autoPaused: true };
+  },
+  // A running session whose page was gone for too long ends at its last heartbeat, not at "now".
+  recover(s, now) {
+    if (s.status === "running" && now - s.lastHeartbeat > STALE_MS) {
+      return { session: Timer.stop(s, s.lastHeartbeat), ended: true };
+    }
+    return { session: s, ended: false };
+  },
+};
+
+const Day = {
+  startOf(ts, dayStartHour) {
+    const d = new Date(ts);
+    const start = new Date(d.getFullYear(), d.getMonth(), d.getDate(), dayStartHour);
+    if (ts < start.getTime()) start.setDate(start.getDate() - 1);
+    return start;
+  },
+  key(date) {
+    const p = (n) => String(n).padStart(2, "0");
+    return `${date.getFullYear()}-${p(date.getMonth() + 1)}-${p(date.getDate())}`;
+  },
+  keyOf(ts, dayStartHour) {
+    return Day.key(Day.startOf(ts, dayStartHour));
+  },
+  // Keys of the last n study days ending with the one containing `now`, oldest first.
+  lastKeys(now, dayStartHour, n) {
+    const start = Day.startOf(now, dayStartHour);
+    const keys = [];
+    for (let i = n - 1; i >= 0; i--) {
+      const d = new Date(start);
+      d.setDate(d.getDate() - i);
+      keys.push(Day.key(d));
+    }
+    return keys;
+  },
+  // Splits a session's time across study days; the stored session is never mutated.
+  split(s, dayStartHour, now) {
+    const out = {};
+    for (const g of s.segments) {
+      const end = g.end == null ? now : g.end;
+      let cur = g.start;
+      while (cur < end) {
+        const dayStart = Day.startOf(cur, dayStartHour);
+        const next = new Date(dayStart);
+        next.setDate(next.getDate() + 1);
+        const stop = Math.min(end, next.getTime());
+        const k = Day.key(dayStart);
+        out[k] = (out[k] || 0) + (stop - cur);
+        cur = stop;
+      }
+    }
+    return out;
+  },
+};
+
+const Stats = {
+  compute(data, now) {
+    const h = data.settings.dayStartHour;
+    const all = data.active ? [...data.sessions, data.active] : data.sessions;
+    const todayKey = Day.keyOf(now, h);
+    const byDay = {}; // day -> subjectId -> ms
+    const today = { total: 0, sessions: [], interruptions: 0, longest: 0, bySubject: {} };
+    for (const s of all) {
+      const parts = Day.split(s, h, now);
+      for (const [day, ms] of Object.entries(parts)) {
+        byDay[day] = byDay[day] || {};
+        byDay[day][s.subjectId] = (byDay[day][s.subjectId] || 0) + ms;
+      }
+      if (parts[todayKey]) {
+        today.sessions.push(s);
+        today.interruptions += s.interruptions;
+        today.longest = Math.max(today.longest, Timer.elapsed(s, now));
+      }
+    }
+    today.bySubject = byDay[todayKey] || {};
+    today.total = Object.values(today.bySubject).reduce((a, b) => a + b, 0);
+    today.sessions.sort((a, b) => b.segments[0].start - a.segments[0].start);
+    const week = Day.lastKeys(now, h, 7).map((key) => {
+      const bySubject = byDay[key] || {};
+      return { key, bySubject, total: Object.values(bySubject).reduce((a, b) => a + b, 0) };
+    });
+    const goalMs = data.settings.dailyGoalMinutes * MIN;
+    const goalPercent = goalMs > 0 ? Math.min(100, (today.total / goalMs) * 100) : 0;
+    return { todayKey, today, week, weekAvg: week.reduce((a, d) => a + d.total, 0) / 7, goalPercent };
+  },
+};
+
+const Format = {
+  hms(ms) {
+    const t = Math.floor(Math.max(0, ms) / 1000);
+    const p = (n) => String(n).padStart(2, "0");
+    return `${p(Math.floor(t / 3600))}:${p(Math.floor((t % 3600) / 60))}:${p(t % 60)}`;
+  },
+  korean(ms) {
+    const m = Math.floor(Math.max(0, ms) / MIN);
+    const h = Math.floor(m / 60);
+    if (h === 0) return `${m}분`;
+    return m % 60 === 0 ? `${h}시간` : `${h}시간 ${m % 60}분`;
+  },
+  short(ms) {
+    const m = Math.floor(Math.max(0, ms) / MIN);
+    return `${Math.floor(m / 60)}:${String(m % 60).padStart(2, "0")}`;
+  },
+  clockTime(ts) {
+    const d = new Date(ts);
+    return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  },
+  goal(minutes) {
+    return Format.korean(minutes * MIN);
+  },
+};
+
+function buildShareText(stats, subjects, settings) {
+  const [, m, d] = stats.todayKey.split("-").map(Number);
+  const goalMet = stats.goalPercent >= 100 ? "✅" : `${Math.floor(stats.goalPercent)}%`;
+  const lines = [`📚 ${m}/${d} 공부 ${Format.korean(stats.today.total)} (목표 ${Format.goal(settings.dailyGoalMinutes)} ${goalMet})`];
+  const parts = Object.entries(stats.today.bySubject)
+    .sort((a, b) => b[1] - a[1])
+    .map(([id, ms]) => `${(subjects.find((s) => s.id === id) || { name: "삭제된 과목" }).name} ${Format.short(ms)}`);
+  if (parts.length) lines.push(parts.join(" · "));
+  lines.push(`집중 이탈 ${stats.today.interruptions}회`);
+  return lines.join("\n");
+}
+
+function validateImport(obj) {
+  const isNum = (v) => typeof v === "number" && isFinite(v);
+  if (!obj || obj.schemaVersion !== 1) return "schemaVersion이 1이 아니에요.";
+  if (!Array.isArray(obj.subjects) || !Array.isArray(obj.sessions) || typeof obj.settings !== "object" || !obj.settings) return "subjects, sessions, settings가 필요해요.";
+  for (const s of obj.subjects) {
+    if (typeof s.id !== "string" || typeof s.name !== "string" || typeof s.color !== "string") return "과목 형식이 잘못됐어요.";
+  }
+  for (const s of obj.sessions) {
+    if (typeof s.id !== "string" || typeof s.subjectId !== "string" || !Array.isArray(s.segments) || !isNum(s.interruptions)) return "세션 형식이 잘못됐어요.";
+    for (const g of s.segments) {
+      if (!isNum(g.start) || !isNum(g.end) || g.end < g.start) return "세션 시간이 잘못됐어요.";
+    }
+  }
+  const st = obj.settings;
+  if (typeof st.strictMode !== "boolean" || !isNum(st.graceSeconds) || !isNum(st.dayStartHour) || !isNum(st.dailyGoalMinutes)) return "설정 형식이 잘못됐어요.";
+  return null;
+}
+
+/* ================= Storage ================= */
+
+const STORAGE_KEY = "studytimer:v1";
+
+function defaultData() {
+  return {
+    schemaVersion: 1,
+    subjects: [{ id: uid(), name: "공부", color: COLORS[0], archived: false, createdAt: Date.now() }],
+    sessions: [],
+    active: null,
+    settings: { ...DEFAULT_SETTINGS },
+    selectedSubjectId: null,
+  };
+}
+
+const Repo = {
+  available: true,
+  memory: null,
+  load() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return null;
+      return JSON.parse(raw);
+    } catch (e) {
+      Repo.available = false;
+      return Repo.memory;
+    }
+  },
+  save(data) {
+    Repo.memory = data;
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    } catch (e) {
+      Repo.available = false;
+    }
+  },
+};
+
+/* ================= Store ================= */
+
+let state = Repo.load() || defaultData();
+state.settings = { ...DEFAULT_SETTINGS, ...state.settings };
+if (!state.subjects.length) state.subjects = defaultData().subjects;
+if (!state.selectedSubjectId || !state.subjects.some((s) => s.id === state.selectedSubjectId && !s.archived)) {
+  const first = state.subjects.find((s) => !s.archived);
+  state.selectedSubjectId = first ? first.id : null;
+}
+let awayBannerVisible = false;
+
+function commit(mutator) {
+  mutator(state);
+  Repo.save(state);
+  render();
+}
+
+// Moves the active session into history (sessions under one minute are dropped).
+function finishActive(s, now) {
+  const done = Timer.stop(s, now);
+  state.active = null;
+  awayBannerVisible = false;
+  if (Timer.elapsed(done, now) < MIN_SESSION_MS) return false;
+  state.sessions.push({ id: done.id, subjectId: done.subjectId, segments: done.segments, interruptions: done.interruptions, status: "completed" });
+  return true;
+}
+
+const Actions = {
+  start() {
+    if (!state.selectedSubjectId || state.active) return;
+    commit((s) => { s.active = Timer.start(s.selectedSubjectId, Date.now()); });
+  },
+  pause() {
+    commit((s) => { s.active = Timer.pause(s.active, Date.now()); });
+  },
+  resume() {
+    awayBannerVisible = false;
+    commit((s) => { s.active = Timer.resume(s.active, Date.now()); });
+  },
+  stop() {
+    let saved = true;
+    commit((s) => { saved = finishActive(s.active, Date.now()); });
+    if (!saved) toast("1분 미만 기록은 저장되지 않아요");
+  },
+  selectSubject(id) {
+    if (id === state.selectedSubjectId) return;
+    const switching = state.active && state.active.status === "running";
+    commit((s) => {
+      s.selectedSubjectId = id;
+      if (s.active) {
+        const now = Date.now();
+        finishActive(s.active, now);
+        if (switching) s.active = Timer.start(id, now);
+      }
+    });
+  },
+  deleteSession(id) {
+    if (!confirm("이 기록을 삭제할까요?")) return;
+    commit((s) => { s.sessions = s.sessions.filter((x) => x.id !== id); });
+  },
+};
+
+/* Visibility, heartbeat and reload recovery */
+
+function applyRecovery(now) {
+  if (!state.active) return;
+  if (state.active.hiddenAt != null) {
+    const r = Timer.handleHidden(state.active, state.active.hiddenAt, now, state.settings);
+    state.active = r.session;
+    if (r.autoPaused) awayBannerVisible = true;
+  }
+  const rec = Timer.recover(state.active, now);
+  if (rec.ended) {
+    const saved = finishActive(rec.session, rec.session.lastHeartbeat);
+    toast(saved ? "오래 비워둔 세션을 마지막 기록 시점에 종료했어요" : "오래 비워둔 짧은 세션은 저장하지 않았어요");
+  } else {
+    state.active = rec.session;
+  }
+}
+
+function heartbeat() {
+  // In strict mode a hidden tab must not keep extending the session.
+  if (state.active && state.active.status === "running" && !(state.settings.strictMode && state.active.hiddenAt != null)) {
+    state.active = { ...state.active, lastHeartbeat: Date.now() };
+    Repo.save(state);
+  }
+}
+
+document.addEventListener("visibilitychange", () => {
+  if (!state.active || state.active.status !== "running") return;
+  const now = Date.now();
+  if (document.visibilityState === "hidden") {
+    state.active = { ...state.active, hiddenAt: now, lastHeartbeat: now };
+    Repo.save(state);
+  } else {
+    commit(() => applyRecovery(now));
+  }
+});
+window.addEventListener("pagehide", heartbeat);
+setInterval(heartbeat, HEARTBEAT_MS);
+
+/* ================= UI ================= */
+
+const $ = (id) => document.getElementById(id);
+const esc = (str) => String(str).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const subjectById = (id) => state.subjects.find((s) => s.id === id) || { name: "삭제된 과목", color: "#8D99AE" };
+let currentTab = "timer";
+
+function toast(msg) {
+  const t = $("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toast.timer);
+  toast.timer = setTimeout(() => t.classList.remove("show"), 2500);
+}
+
+function render() {
+  $("storage-warning").classList.toggle("hidden", Repo.available);
+  renderTimer();
+  if (currentTab === "stats") renderStats();
+  if (currentTab === "settings") renderSettings();
+}
+
+function renderTimer() {
+  const a = state.active;
+  $("subject-chips").innerHTML = state.subjects.filter((s) => !s.archived).map((s) => `
+    <button class="chip ${s.id === state.selectedSubjectId ? "selected" : ""}" data-subject="${s.id}">
+      <span class="dot" style="background:${s.color}"></span>${esc(s.name)}
+    </button>`).join("");
+  $("btn-start").classList.toggle("hidden", !!a);
+  $("btn-start").disabled = !state.selectedSubjectId;
+  $("btn-pause").classList.toggle("hidden", !a || a.status !== "running");
+  $("btn-resume").classList.toggle("hidden", !a || a.status !== "paused");
+  $("btn-stop").classList.toggle("hidden", !a);
+  $("away-banner").classList.toggle("hidden", !(awayBannerVisible && a && a.status === "paused"));
+  $("goal-label").textContent = `목표 ${Format.goal(state.settings.dailyGoalMinutes)}`;
+  tick();
+}
+
+// Cheap per-second refresh: values always come from timestamps, never from counting ticks.
+function tick() {
+  const now = Date.now();
+  const a = state.active;
+  $("clock-time").textContent = Format.hms(a ? Timer.elapsed(a, now) : 0);
+  $("clock-state").textContent = !a ? (state.selectedSubjectId ? `${subjectById(state.selectedSubjectId).name} 준비` : "과목을 추가해 주세요")
+    : a.status === "running" ? `${subjectById(a.subjectId).name} · 공부 중` : "일시정지";
+  const stats = Stats.compute(state, now);
+  $("today-total").textContent = Format.korean(stats.today.total);
+  $("goal-progress").firstElementChild.style.width = stats.goalPercent + "%";
+  $("goal-progress").classList.toggle("done", stats.goalPercent >= 100);
+  $("goal-percent").textContent = stats.goalPercent >= 100 ? "목표 달성!" : `${Math.floor(stats.goalPercent)}%`;
+  $("today-interruptions").textContent = stats.today.interruptions ? `집중 이탈 ${stats.today.interruptions}회` : "";
+}
+
+function renderStats() {
+  const now = Date.now();
+  const stats = Stats.compute(state, now);
+  const [, m, d] = stats.todayKey.split("-").map(Number);
+  $("stats-date").textContent = `${m}/${d}`;
+  $("s-total").textContent = Format.korean(stats.today.total);
+  $("s-count").textContent = `${stats.today.sessions.length}회`;
+  $("s-int").textContent = `${stats.today.interruptions}회`;
+  $("s-long").textContent = Format.korean(stats.today.longest);
+  $("donut").innerHTML = donutSvg(stats.today.bySubject, stats.today.total);
+  $("bars").innerHTML = barsSvg(stats.week);
+  $("week-avg").textContent = `하루 평균 ${Format.korean(stats.weekAvg)}`;
+  $("session-list").innerHTML = stats.today.sessions.length ? stats.today.sessions.map((s) => {
+    const subj = subjectById(s.subjectId);
+    const first = s.segments[0].start;
+    const last = s.segments[s.segments.length - 1].end;
+    const isActive = state.active && s.id === state.active.id;
+    return `<div class="session">
+      <span class="dot" style="background:${subj.color}"></span>
+      <div class="info">
+        <div class="name">${esc(subj.name)}</div>
+        <div class="muted">${Format.clockTime(first)} – ${isActive ? "진행 중" : Format.clockTime(last)}${s.interruptions ? ` · 이탈 ${s.interruptions}회` : ""}</div>
+      </div>
+      <span class="dur">${Format.korean(Timer.elapsed(s, now))}</span>
+      ${isActive ? "" : `<button class="ghost" data-delete="${s.id}" aria-label="삭제">삭제</button>`}
+    </div>`;
+  }).join("") : `<div class="empty">아직 오늘 기록이 없어요</div>`;
+}
+
+function donutSvg(bySubject, total) {
+  const entries = Object.entries(bySubject).filter(([, ms]) => ms > 0).sort((a, b) => b[1] - a[1]);
+  if (!entries.length) return `<div class="empty">공부를 시작하면 과목별 비율이 보여요</div>`;
+  const r = 52, c = 2 * Math.PI * r;
+  let offset = 0;
+  const arcs = entries.map(([id, ms]) => {
+    const len = (ms / total) * c;
+    const arc = `<circle r="${r}" cx="70" cy="70" fill="none" stroke="${subjectById(id).color}" stroke-width="22"
+      stroke-dasharray="${len} ${c - len}" stroke-dashoffset="${-offset}" transform="rotate(-90 70 70)"></circle>`;
+    offset += len;
+    return arc;
+  }).join("");
+  const legend = entries.map(([id, ms]) => {
+    const s = subjectById(id);
+    return `<li><span class="dot" style="background:${s.color}"></span>${esc(s.name)}<span class="v">${Format.korean(ms)} · ${Math.round((ms / total) * 100)}%</span></li>`;
+  }).join("");
+  return `<div class="donut-wrap"><svg width="140" height="140" viewBox="0 0 140 140" role="img" aria-label="과목별 비율">${arcs}</svg><ul class="legend">${legend}</ul></div>`;
+}
+
+function barsSvg(week) {
+  const W = 320, H = 170, top = 18, bottom = 22, plotH = H - top - bottom;
+  const maxMs = Math.max(HOUR, ...week.map((d) => d.total));
+  const goalMs = state.settings.dailyGoalMinutes * MIN;
+  const scale = Math.max(maxMs, goalMs);
+  const slot = W / 7, bw = Math.min(28, slot * 0.55);
+  const days = ["일", "월", "화", "수", "목", "금", "토"];
+  let out = "";
+  if (goalMs > 0) {
+    const y = top + plotH - (goalMs / scale) * plotH;
+    out += `<line x1="0" x2="${W}" y1="${y}" y2="${y}" stroke="var(--muted)" stroke-dasharray="4 4" stroke-width="1" opacity=".6"></line>`;
+  }
+  week.forEach((d, i) => {
+    const x = i * slot + (slot - bw) / 2;
+    let y = top + plotH;
+    for (const [id, ms] of Object.entries(d.bySubject).sort((a, b) => b[1] - a[1])) {
+      const h = (ms / scale) * plotH;
+      y -= h;
+      out += `<rect x="${x}" y="${y}" width="${bw}" height="${Math.max(0, h)}" fill="${subjectById(id).color}"></rect>`;
+    }
+    const [yy, mm, dd] = d.key.split("-").map(Number);
+    const dow = days[new Date(yy, mm - 1, dd).getDay()];
+    out += `<text x="${x + bw / 2}" y="${H - 6}" text-anchor="middle">${i === 6 ? "오늘" : dow}</text>`;
+    if (d.total > 0) out += `<text x="${x + bw / 2}" y="${y - 5}" text-anchor="middle">${Format.short(d.total)}</text>`;
+  });
+  return `<svg width="100%" viewBox="0 0 ${W} ${H}" role="img" aria-label="최근 7일 공부시간">${out}</svg>`;
+}
+
+function renderSettings() {
+  const st = state.settings;
+  $("set-strict").checked = st.strictMode;
+  fillSelect("set-grace", [5, 10, 30, 60].map((v) => [v, `${v}초`]), st.graceSeconds);
+  fillSelect("set-daystart", Array.from({ length: 24 }, (_, h) => [h, `${h}시`]), st.dayStartHour);
+  fillSelect("set-goal", Array.from({ length: 32 }, (_, i) => (i + 1) * 30).map((v) => [v, Format.goal(v)]), st.dailyGoalMinutes);
+  $("subject-editor").innerHTML = state.subjects.map((s) => `
+    <div class="subj-row ${s.archived ? "archived" : ""}">
+      <button class="color-btn" style="background:${s.color}" data-color-cycle="${s.id}" aria-label="색 바꾸기"></button>
+      <input type="text" value="${esc(s.name)}" maxlength="20" data-rename="${s.id}" ${s.archived ? "disabled" : ""}>
+      <button class="ghost" data-archive="${s.id}">${s.archived ? "복원" : "보관"}</button>
+    </div>`).join("");
+}
+
+function fillSelect(id, options, value) {
+  $(id).innerHTML = options.map(([v, label]) => `<option value="${v}" ${v === value ? "selected" : ""}>${label}</option>`).join("");
+}
+
+/* Share card */
+
+function drawShareCard(stats) {
+  const cv = document.createElement("canvas");
+  cv.width = 1080; cv.height = 1350;
+  const g = cv.getContext("2d");
+  const font = '"Apple SD Gothic Neo", "Malgun Gothic", sans-serif';
+  const grad = g.createLinearGradient(0, 0, 1080, 1350);
+  grad.addColorStop(0, "#4F7CFF"); grad.addColorStop(1, "#9B5DE5");
+  g.fillStyle = grad; g.fillRect(0, 0, 1080, 1350);
+  g.fillStyle = "rgba(255,255,255,.95)";
+  roundRect(g, 80, 80, 920, 1190, 48); g.fill();
+  const [, m, d] = stats.todayKey.split("-").map(Number);
+  g.fillStyle = "#6b7185"; g.font = `600 44px ${font}`;
+  g.fillText(`${m}월 ${d}일 공부 기록`, 150, 200);
+  g.fillStyle = "#1d2130"; g.font = `800 150px ${font}`;
+  g.fillText(Format.korean(stats.today.total), 150, 370);
+  // goal bar
+  g.fillStyle = "#e8eeff"; roundRect(g, 150, 430, 780, 36, 18); g.fill();
+  g.fillStyle = stats.goalPercent >= 100 ? "#12a150" : "#4F7CFF";
+  roundRect(g, 150, 430, Math.max(36, 780 * stats.goalPercent / 100), 36, 18); g.fill();
+  g.fillStyle = "#6b7185"; g.font = `600 38px ${font}`;
+  g.fillText(`목표 ${Format.goal(state.settings.dailyGoalMinutes)} · ${stats.goalPercent >= 100 ? "달성 ✅" : Math.floor(stats.goalPercent) + "%"}`, 150, 530);
+  let y = 640;
+  const entries = Object.entries(stats.today.bySubject).sort((a, b) => b[1] - a[1]).slice(0, 6);
+  for (const [id, ms] of entries) {
+    const s = subjectById(id);
+    g.fillStyle = s.color; g.beginPath(); g.arc(170, y - 14, 16, 0, Math.PI * 2); g.fill();
+    g.fillStyle = "#1d2130"; g.font = `600 46px ${font}`;
+    g.fillText(s.name, 210, y);
+    g.textAlign = "right"; g.fillText(Format.korean(ms), 930, y); g.textAlign = "left";
+    y += 80;
+  }
+  g.fillStyle = "#6b7185"; g.font = `600 38px ${font}`;
+  g.fillText(`집중 이탈 ${stats.today.interruptions}회 · 세션 ${stats.today.sessions.length}회`, 150, 1190);
+  return cv;
+}
+
+function roundRect(g, x, y, w, h, r) {
+  g.beginPath();
+  g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r);
+  g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath();
+}
+
+async function share() {
+  const stats = Stats.compute(state, Date.now());
+  const text = buildShareText(stats, state.subjects, state.settings);
+  const blob = await new Promise((res) => drawShareCard(stats).toBlob(res, "image/png"));
+  const file = new File([blob], `공부기록-${stats.todayKey}.png`, { type: "image/png" });
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try { await navigator.share({ text, files: [file] }); return; } catch (e) { if (e.name === "AbortError") return; }
+  }
+  let copied = false;
+  try { await navigator.clipboard.writeText(text); copied = true; } catch (e) { /* clipboard unavailable */ }
+  download(blob, file.name);
+  toast(copied ? "기록 문구를 복사하고 카드 이미지를 저장했어요" : "카드 이미지를 저장했어요");
+}
+
+function download(blob, name) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+/* ================= Events ================= */
+
+document.querySelectorAll("nav button").forEach((b) => b.addEventListener("click", () => {
+  currentTab = b.dataset.tab;
+  document.querySelectorAll("nav button").forEach((x) => x.classList.toggle("on", x === b));
+  for (const t of ["timer", "stats", "settings"]) $("view-" + t).classList.toggle("hidden", t !== currentTab);
+  render();
+  window.scrollTo(0, 0);
+}));
+
+$("btn-start").addEventListener("click", Actions.start);
+$("btn-pause").addEventListener("click", Actions.pause);
+$("btn-resume").addEventListener("click", Actions.resume);
+$("away-resume").addEventListener("click", Actions.resume);
+$("btn-stop").addEventListener("click", Actions.stop);
+$("subject-chips").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-subject]");
+  if (b) Actions.selectSubject(b.dataset.subject);
+});
+$("session-list").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-delete]");
+  if (b) Actions.deleteSession(b.dataset.delete);
+});
+$("btn-share").addEventListener("click", share);
+
+$("set-strict").addEventListener("change", (e) => commit((s) => { s.settings.strictMode = e.target.checked; }));
+$("set-grace").addEventListener("change", (e) => commit((s) => { s.settings.graceSeconds = Number(e.target.value); }));
+$("set-daystart").addEventListener("change", (e) => commit((s) => { s.settings.dayStartHour = Number(e.target.value); }));
+$("set-goal").addEventListener("change", (e) => commit((s) => { s.settings.dailyGoalMinutes = Number(e.target.value); }));
+
+function addSubject() {
+  const name = $("new-subject").value.trim();
+  if (!name) return;
+  commit((s) => {
+    const subj = { id: uid(), name: name.slice(0, 20), color: COLORS[s.subjects.length % COLORS.length], archived: false, createdAt: Date.now() };
+    s.subjects.push(subj);
+    if (!s.selectedSubjectId) s.selectedSubjectId = subj.id;
+  });
+  $("new-subject").value = "";
+}
+$("btn-add-subject").addEventListener("click", addSubject);
+$("new-subject").addEventListener("keydown", (e) => { if (e.key === "Enter") addSubject(); });
+
+$("subject-editor").addEventListener("change", (e) => {
+  const id = e.target.dataset.rename;
+  if (!id) return;
+  const name = e.target.value.trim().slice(0, 20);
+  if (!name) { renderSettings(); return; }
+  commit((s) => { s.subjects = s.subjects.map((x) => (x.id === id ? { ...x, name } : x)); });
+});
+$("subject-editor").addEventListener("click", (e) => {
+  const cycle = e.target.closest("[data-color-cycle]");
+  const arch = e.target.closest("[data-archive]");
+  if (cycle) {
+    commit((s) => {
+      s.subjects = s.subjects.map((x) => x.id === cycle.dataset.colorCycle
+        ? { ...x, color: COLORS[(COLORS.indexOf(x.color) + 1) % COLORS.length] } : x);
+    });
+  } else if (arch) {
+    const id = arch.dataset.archive;
+    if (state.active && state.active.subjectId === id) { toast("공부 중인 과목은 보관할 수 없어요"); return; }
+    commit((s) => {
+      s.subjects = s.subjects.map((x) => (x.id === id ? { ...x, archived: !x.archived } : x));
+      if (s.selectedSubjectId === id || !s.selectedSubjectId) {
+        const first = s.subjects.find((x) => !x.archived);
+        s.selectedSubjectId = first ? first.id : null;
+      }
+    });
+  }
+});
+
+$("btn-export").addEventListener("click", () => {
+  const { schemaVersion, subjects, sessions, settings } = state;
+  const blob = new Blob([JSON.stringify({ schemaVersion, subjects, sessions, settings }, null, 2)], { type: "application/json" });
+  download(blob, `공부시간-백업-${Day.keyOf(Date.now(), state.settings.dayStartHour)}.json`);
+});
+$("btn-import").addEventListener("click", () => $("import-file").click());
+$("import-file").addEventListener("change", async (e) => {
+  const f = e.target.files[0];
+  e.target.value = "";
+  if (!f) return;
+  let obj;
+  try { obj = JSON.parse(await f.text()); } catch (err) { toast("JSON 파일을 읽을 수 없어요"); return; }
+  const error = validateImport(obj);
+  if (error) { toast("가져오지 못했어요: " + error); return; }
+  if (!confirm("지금 기록을 모두 바꿔서 가져올까요?")) return;
+  commit((s) => {
+    s.subjects = obj.subjects.map((x) => ({ archived: false, createdAt: Date.now(), ...x }));
+    s.sessions = obj.sessions.map((x) => ({ ...x, status: "completed" }));
+    s.settings = { ...DEFAULT_SETTINGS, ...obj.settings };
+    s.active = null;
+    const first = s.subjects.find((x) => !x.archived);
+    s.selectedSubjectId = first ? first.id : null;
+  });
+  toast("기록을 가져왔어요");
+});
+$("btn-reset").addEventListener("click", () => {
+  if (!confirm("모든 기록과 과목을 지울까요? 되돌릴 수 없어요.")) return;
+  awayBannerVisible = false;
+  commit((s) => Object.assign(s, defaultData(), { selectedSubjectId: null }));
+  commit((s) => { s.selectedSubjectId = s.subjects[0].id; });
+});
+
+/* ================= Boot ================= */
+
+applyRecovery(Date.now());
+Repo.save(state);
+render();
+setInterval(() => {
+  tick();
+  if (currentTab === "stats" && state.active && state.active.status === "running") renderStats();
+}, 1000);
+</script>
+</body>
+</html>
