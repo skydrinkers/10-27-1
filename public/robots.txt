@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://10-27-1.pages.dev/sitemap.xml

@@ -1,0 +1,16 @@
+{
+  "name": "공부시간 - 무료 공부 타이머",
+  "short_name": "공부시간",
+  "description": "과목별로 공부시간을 측정하고 하루 목표와 최근 7일 통계를 확인하는 무료 공부 타이머",
+  "lang": "ko",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f5f6fa",
+  "theme_color": "#4F7CFF",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" },
+    { "src": "/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
